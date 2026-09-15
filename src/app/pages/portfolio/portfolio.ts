@@ -161,6 +161,13 @@ export class Portfolio implements AfterViewInit, OnDestroy {
     this.initPathScrollAnimations();
     this.initSectionScrollAnimations();
     ScrollTrigger.refresh(true);
+
+    if (typeof document !== 'undefined' && document.fonts) {
+      document.fonts.ready.then(() => {
+        this.calculatePaths();
+        ScrollTrigger.refresh(true);
+      });
+    }
   }
 
   private readonly borderActiveColors = [
@@ -406,7 +413,8 @@ export class Portfolio implements AfterViewInit, OnDestroy {
         const currentLen = liveLen * p;
         gsap.set(pathEl, { opacity: 1, strokeDashoffset: liveLen - currentLen });
 
-        const pt = pathEl.getPointAtLength(currentLen);
+        const arrowLen = Math.min(currentLen + 5, liveLen);
+        const pt = pathEl.getPointAtLength(arrowLen);
         if (p >= 0.995) {
           this.setArrowState(this.arrowEl1?.nativeElement, { x: pt.x, y: pt.y, angle: 90, visible: false });
           gsap.to(node1, {
@@ -419,8 +427,9 @@ export class Portfolio implements AfterViewInit, OnDestroy {
           });
           this.activateNodeColor(1);
         } else {
-          const ptNext = pathEl.getPointAtLength(Math.min(currentLen + 1, liveLen));
-          const angle = Math.atan2(ptNext.y - pt.y, ptNext.x - pt.x) * (180 / Math.PI);
+          const ptPrev = pathEl.getPointAtLength(Math.max(0, arrowLen - 2));
+          const ptNext = pathEl.getPointAtLength(Math.min(arrowLen + 2, liveLen));
+          const angle = Math.atan2(ptNext.y - ptPrev.y, ptNext.x - ptPrev.x) * (180 / Math.PI);
           this.setArrowState(this.arrowEl1?.nativeElement, { x: pt.x, y: pt.y, angle, visible: true });
 
           if (p >= 0.60) {
@@ -684,16 +693,11 @@ export class Portfolio implements AfterViewInit, OnDestroy {
   ): void {
     if (!arrowEl) return;
     if (!state.visible) {
-      gsap.set(arrowEl, { opacity: 0 });
+      arrowEl.style.opacity = '0';
+      arrowEl.removeAttribute('transform');
     } else {
-      gsap.set(arrowEl, {
-        x: state.x,
-        y: state.y,
-        rotation: state.angle,
-        transformOrigin: '0% 0%',
-        opacity: 1,
-        overwrite: 'auto'
-      });
+      arrowEl.setAttribute('transform', `translate(${state.x}, ${state.y}) rotate(${state.angle})`);
+      arrowEl.style.opacity = '1';
     }
   }
 
@@ -850,6 +854,9 @@ export class Portfolio implements AfterViewInit, OnDestroy {
             if (progress > 0.01) {
               gsap.set(pathEl, { opacity: 1, strokeDashoffset: length - currentLen });
 
+              const arrowLen = Math.min(currentLen + 5, length);
+              const pt = pathEl.getPointAtLength(arrowLen);
+
               if (index === 1 && progress >= 0.50) {
                 this.animateAboutText();
               }
@@ -879,8 +886,9 @@ export class Portfolio implements AfterViewInit, OnDestroy {
                 }
                 this.activateNodeColor(targetIdx);
               } else {
-                const ptNext = pathEl.getPointAtLength(Math.min(currentLen + 1, length));
-                const angle = Math.atan2(ptNext.y - pt.y, ptNext.x - pt.x) * (180 / Math.PI);
+                const ptPrev = pathEl.getPointAtLength(Math.max(0, arrowLen - 2));
+                const ptNext = pathEl.getPointAtLength(Math.min(arrowLen + 2, length));
+                const angle = Math.atan2(ptNext.y - ptPrev.y, ptNext.x - ptPrev.x) * (180 / Math.PI);
                 setArrow({ x: pt.x, y: pt.y, angle, visible: true });
 
                 if (progress >= 0.60) {
@@ -1086,7 +1094,8 @@ export class Portfolio implements AfterViewInit, OnDestroy {
               this.triggerTargetSectionAnimation(targetIdx);
             }
 
-            const pt = pathEl.getPointAtLength(currentLen);
+            const arrowLen = Math.min(currentLen + 5, length);
+            const pt = pathEl.getPointAtLength(arrowLen);
             if (p >= 0.995) {
               setArrow({ x: pt.x, y: pt.y, angle: 90, visible: false });
               if (targetCard) {
@@ -1101,8 +1110,9 @@ export class Portfolio implements AfterViewInit, OnDestroy {
               }
               this.activateNodeColor(targetIdx);
             } else {
-              const ptNext = pathEl.getPointAtLength(Math.min(currentLen + 1, length));
-              const angle = Math.atan2(ptNext.y - pt.y, ptNext.x - pt.x) * (180 / Math.PI);
+              const ptPrev = pathEl.getPointAtLength(Math.max(0, arrowLen - 2));
+              const ptNext = pathEl.getPointAtLength(Math.min(arrowLen + 2, length));
+              const angle = Math.atan2(ptNext.y - ptPrev.y, ptNext.x - ptPrev.x) * (180 / Math.PI);
               setArrow({ x: pt.x, y: pt.y, angle, visible: true });
 
               if (p >= 0.60) {
